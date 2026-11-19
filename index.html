@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Los Mártires — Experiencia Urbana Interactiva</title>
+  <meta name="description" content="Plataforma web 3D y Realidad Aumentada para la sustentación de propuesta urbana en Los Mártires (La Favorita), Bogotá." />
+  <meta name="theme-color" content="#14171a" />
+  <link rel="stylesheet" href="styles.css" />
+  <script type="module" src="vendor/model-viewer.min.js"></script>
+</head>
+<body data-mode="landing">
+  <!-- Barra superior compacta -->
+  <header class="topbar" id="topbar">
+    <button class="brand" id="btn-home" type="button" aria-label="Volver al inicio">
+      <span class="brand-tag">BOGOTÁ · LOS MÁRTIRES</span>
+      <span class="brand-title">LA FAVORITA · 1VTY</span>
+    </button>
+
+    <div class="topbar-actions">
+      <button class="pill-btn" id="btn-toggle-hotspots" type="button" aria-pressed="true" title="Mostrar u ocultar puntos informativos">
+        <span class="dot-ind"></span>
+        <span>Fichas (5)</span>
+      </button>
+      <button class="pill-btn pill-ar" id="btn-top-ar" type="button">
+        <span>Ver en AR</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Escenario 3D principal -->
+  <main class="stage" id="stage">
+    <!-- Visor principal: Propuesta urbana (Después) -->
+    <model-viewer
+      id="mv-despues"
+      class="viewer-layer"
+      src="assets/maqueta_1vty_despues.glb"
+      ios-src="assets/maqueta_1vty_despues.usdz"
+      poster="assets/poster_1vty.jpg"
+      alt="Maqueta 3D propuesta urbana sector La Favorita, Los Mártires, Bogotá"
+      ar
+      ar-modes="webxr scene-viewer quick-look"
+      ar-scale="auto"
+      ar-placement="floor"
+      camera-controls
+      touch-action="none"
+      interaction-prompt="none"
+      camera-orbit="38deg 58deg 1.18m"
+      camera-target="0m 0.04m 0m"
+      field-of-view="34deg"
+      min-camera-orbit="auto 12deg 0.14m"
+      max-camera-orbit="auto 86deg 2.6m"
+      min-field-of-view="14deg"
+      max-field-of-view="52deg"
+      shadow-intensity="0.85"
+      shadow-softness="0.7"
+      exposure="1.05"
+      tone-mapping="neutral"
+      interpolation-decay="95"
+    >
+      <!-- Slot personalizado oculto; la UI dispara activateAR() de forma controlada -->
+      <button slot="ar-button" class="mv-native-ar-hidden" tabindex="-1" aria-hidden="true"></button>
+
+      <!-- Puntos informativos arquitectónicos (Experiencia D) -->
+      <button class="hotspot" slot="hotspot-1" data-hs="1" data-position="-0.02 0.025 -0.175" data-normal="0 1 0" type="button" aria-label="Conectividad y accesibilidad">
+        <span class="hs-num">1</span>
+        <span class="hs-label">Conectividad</span>
+      </button>
+      <button class="hotspot" slot="hotspot-2" data-hs="2" data-position="0.0 0.022 0.0" data-normal="0 1 0" type="button" aria-label="Circulaciones y movilidad">
+        <span class="hs-num">2</span>
+        <span class="hs-label">Movilidad</span>
+      </button>
+      <button class="hotspot" slot="hotspot-3" data-hs="3" data-position="0.02 0.019 0.275" data-normal="0 1 0" type="button" aria-label="Espacio público y zócalo comercial">
+        <span class="hs-num">3</span>
+        <span class="hs-label">Espacio Público</span>
+      </button>
+      <button class="hotspot" slot="hotspot-4" data-hs="4" data-position="0.104 0.028 -0.380" data-normal="0 1 0" type="button" aria-label="Vegetación y estructura ambiental">
+        <span class="hs-num">4</span>
+        <span class="hs-label">Estructura Ambiental</span>
+      </button>
+      <button class="hotspot" slot="hotspot-5" data-hs="5" data-position="0.111 0.048 -0.218" data-normal="0 1 0" type="button" aria-label="Equipamientos y densidad">
+        <span class="hs-num">5</span>
+        <span class="hs-label">Equipamientos</span>
+      </button>
+
+      <div class="loading-ribbon" slot="progress-bar" id="loading-ribbon">
+        <div class="loading-bar" id="loading-bar"></div>
+      </div>
+    </model-viewer>
+
+    <!-- Visor sincronizado: Estado original real UAECD / Catastro Bogotá (Antes) -->
+    <model-viewer
+      id="mv-antes"
+      class="viewer-layer viewer-antes"
+      alt="Maqueta 3D estado actual real según Catastro de Bogotá"
+      camera-orbit="38deg 58deg 1.18m"
+      camera-target="0m 0.04m 0m"
+      field-of-view="34deg"
+      min-camera-orbit="auto 12deg 0.14m"
+      max-camera-orbit="auto 86deg 2.6m"
+      min-field-of-view="14deg"
+      max-field-of-view="52deg"
+      shadow-intensity="0.85"
+      shadow-softness="0.7"
+      exposure="1.05"
+      tone-mapping="neutral"
+      interpolation-decay="0"
+      interaction-prompt="none"
+    ></model-viewer>
+
+    <!-- Línea divisoria interactiva en modo Antes y Después -->
+    <div class="compare-divider" id="compare-divider" aria-hidden="true">
+      <div class="divider-line"></div>
+      <div class="divider-knob" title="Desliza para comparar">◄ ►</div>
+      <div class="badge-side badge-antes">ANTES · CATASTRO REAL</div>
+      <div class="badge-side badge-despues">DESPUÉS · PROPUESTA</div>
+    </div>
+
+    <!-- Aviso de estado / compatibilidad AR o carga -->
+    <div class="toast-banner" id="toast-banner" role="status" aria-live="polite" hidden>
+      <span id="toast-text"></span>
+      <button class="toast-close" id="toast-close" type="button" aria-label="Cerrar aviso">×</button>
+    </div>
+
+    <!-- Tarjeta de información arquitectónica (Experiencia D) o parada de recorrido (Experiencia C) -->
+    <aside class="info-sheet" id="info-sheet" hidden aria-live="polite">
+      <div class="info-head">
+        <div>
+          <span class="info-kicker" id="info-kicker">FICHA TÉCNICA</span>
+          <h2 class="info-title" id="info-title">Título</h2>
+        </div>
+        <button class="icon-close" id="info-close" type="button" aria-label="Cerrar ficha">×</button>
+      </div>
+      <p class="info-desc" id="info-desc"></p>
+      <div class="info-metrics" id="info-metrics"></div>
+    </aside>
+
+    <!-- Controles específicos: Antes y después (Experiencia B) -->
+    <section class="panel-compare" id="panel-compare" hidden>
+      <div class="compare-row">
+        <span class="cmp-lbl">ANTES</span>
+        <input id="compare-range" type="range" min="0" max="100" value="50" aria-label="Comparador Antes y Después" />
+        <span class="cmp-lbl">DESPUÉS</span>
+      </div>
+      <div class="compare-presets">
+        <button class="chip-btn" data-split="100" type="button">Solo Antes</button>
+        <button class="chip-btn active" data-split="50" type="button">Comparar 50/50</button>
+        <button class="chip-btn" data-split="0" type="button">Solo Después</button>
+      </div>
+      <p class="compare-caption" id="compare-caption">
+        Estado original real (Catastro UAECD: 29 manzanas, 999 predios) vs. intervención propuesta (11.70 ha · IO 0.412 · IC 4.01). Ambos modelos orbitan sincronizados.
+      </p>
+    </section>
+
+    <!-- Controles específicos: Recorrido urbano peatonal (Experiencia C) -->
+    <section class="panel-tour" id="panel-tour" hidden>
+      <div class="tour-head">
+        <span class="tour-step" id="tour-step">PUNTO 1 / 3</span>
+        <button class="chip-btn" id="btn-tour-reset" type="button">Vista maqueta</button>
+      </div>
+      <h3 class="tour-title" id="tour-title">Zócalo Comercial y Eje Central</h3>
+      <p class="tour-desc" id="tour-desc"></p>
+      <div class="tour-nav">
+        <button class="btn-outline" id="btn-tour-prev" type="button">← Anterior</button>
+        <button class="btn-solid" id="btn-tour-next" type="button">Siguiente punto →</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Navegación inferior persistente en modos activos -->
+  <nav class="mode-dock" id="mode-dock" aria-label="Modos de experiencia">
+    <button class="dock-btn" data-go="ar" type="button">AR Mesa</button>
+    <button class="dock-btn active" data-go="explore" type="button">Explorar 3D</button>
+    <button class="dock-btn" data-go="compare" type="button">Antes / Después</button>
+    <button class="dock-btn" data-go="tour" type="button">Recorrido</button>
+  </nav>
+
+  <!-- Pantalla inicial / Portada arquitectónica -->
+  <section class="landing-overlay" id="landing-overlay">
+    <div class="landing-card">
+      <div class="landing-meta">LOCALIDAD DE LOS MÁRTIRES · SECTOR LA FAVORITA · BOGOTÁ D.C.</div>
+      <h1 class="landing-title">LOS MÁRTIRES — EXPERIENCIA URBANA INTERACTIVA</h1>
+      <p class="landing-sub">
+        Maqueta digital interactiva a escala <strong>1:500</strong> (0.66 × 1.02 m en mesa AR) y comparación urbana contra levantamiento oficial de Catastro Bogotá.
+        <span class="landing-provisional">Nombre definitivo del proyecto por confirmar.</span>
+      </p>
+
+      <div class="landing-kpis">
+        <div class="kpi"><strong>11.70 ha</strong><span>Área intervención</span></div>
+        <div class="kpi"><strong>58.8%</strong><span>Espacio abierto</span></div>
+        <div class="kpi"><strong>IC 4.01</strong><span>IO 0.412 · 469,823 m²</span></div>
+      </div>
+
+      <div class="landing-actions">
+        <button class="action-btn action-primary" data-go="ar" type="button">
+          <span class="action-num">01</span>
+          <span class="action-body">
+            <strong>Ver maqueta en AR</strong>
+            <small>Colocar maqueta virtual sobre mesa o superficie real</small>
+          </span>
+        </button>
+
+        <button class="action-btn" data-go="explore" type="button">
+          <span class="action-num">02</span>
+          <span class="action-body">
+            <strong>Explorar modelo 3D</strong>
+            <small>Órbita libre, zoom y 5 fichas de análisis urbano</small>
+          </span>
+        </button>
+
+        <button class="action-btn" data-go="compare" type="button">
+          <span class="action-num">03</span>
+          <span class="action-body">
+            <strong>Antes y después</strong>
+            <small>Deslizador sincronizado Catastro real vs. propuesta</small>
+          </span>
+        </button>
+
+        <button class="action-btn" data-go="tour" type="button">
+          <span class="action-num">04</span>
+          <span class="action-body">
+            <strong>Recorrido urbano</strong>
+            <small>3 perspectivas peatonales dentro del visor web</small>
+          </span>
+        </button>
+      </div>
+
+      <p class="landing-footnote">
+        Nota técnica: la cámara AR usa el visor nativo del celular (Scene Viewer / AR Quick Look). El comparador Antes/Después, el recorrido peatonal y los puntos informativos se operan en el visor web.
+      </p>
+    </div>
+  </section>
+
+  <script src="app.js"></script>
+</body>
+</html>
