@@ -1,314 +1,327 @@
-(() => {
+(function () {
+  "use strict";
+
   const mvDespues = document.getElementById("mv-despues");
   const mvAntes = document.getElementById("mv-antes");
   const loadingRibbon = document.getElementById("loading-ribbon");
   const loadingBar = document.getElementById("loading-bar");
 
-  const panelCompare = document.getElementById("panel-compare");
-  const panelTour = document.getElementById("panel-tour");
   const infoSheet = document.getElementById("info-sheet");
   const infoKicker = document.getElementById("info-kicker");
   const infoTitle = document.getElementById("info-title");
   const infoDesc = document.getElementById("info-desc");
   const infoMetrics = document.getElementById("info-metrics");
-  const infoClose = document.getElementById("info-close");
 
+  const panelCompare = document.getElementById("panel-compare");
   const compareRange = document.getElementById("compare-range");
-  const toastBanner = document.getElementById("toast-banner");
-  const toastText = document.getElementById("toast-text");
-  const toastClose = document.getElementById("toast-close");
+  const presetBtns = Array.from(document.querySelectorAll(".compare-presets .chip-btn"));
 
-  const btnHome = document.getElementById("btn-home");
-  const btnTopAr = document.getElementById("btn-top-ar");
-  const btnToggleHotspots = document.getElementById("btn-toggle-hotspots");
-  const btnTourPrev = document.getElementById("btn-tour-prev");
-  const btnTourNext = document.getElementById("btn-tour-next");
-  const btnTourReset = document.getElementById("btn-tour-reset");
-
+  const panelTour = document.getElementById("panel-tour");
   const tourStepEl = document.getElementById("tour-step");
   const tourTitleEl = document.getElementById("tour-title");
   const tourDescEl = document.getElementById("tour-desc");
+  const btnTourPrev = document.getElementById("btn-tour-prev");
+  const btnTourNext = document.getElementById("btn-tour-next");
+  const btnTourPlay = document.getElementById("btn-tour-play");
 
-  const DEFAULT_ORBIT = "38deg 58deg 1.18m";
-  const DEFAULT_TARGET = "0m 0.04m 0m";
-  const DEFAULT_FOV = "34deg";
+  const dockBtns = Array.from(document.querySelectorAll(".dock-btn[data-mode]"));
+  const hotspotBtns = Array.from(document.querySelectorAll(".hotspot"));
 
-  // Datos reales verificados desde metrics.json + raycast 3D libre de obstrucciones en Blender
+  const btnToggleHotspots = document.getElementById("btn-toggle-hotspots");
+  const btnResetView = document.getElementById("btn-reset-view");
+  const btnAr = document.getElementById("btn-ar");
+  const btnCloseInfo = document.getElementById("btn-close-info");
+  const btnBrandHome = document.getElementById("btn-brand-home");
+
+  const btnGoCompare = document.getElementById("btn-go-compare");
+  const btnGoExplore = document.getElementById("btn-go-explore");
+  const btnGoTour = document.getElementById("btn-go-tour");
+  const btnGoAr = document.getElementById("btn-go-ar");
+
+  const toastBanner = document.getElementById("toast-banner");
+  const toastText = document.getElementById("toast-text");
+  const btnToastClose = document.getElementById("btn-toast-close");
+
+  const DEFAULT_ORBIT = "38deg 54deg 1.55m";
+  const DEFAULT_TARGET = "0.02m 0.025m 0.00m";
+
   const HOTSPOTS = {
-    "1": {
-      kicker: "01 · CONECTIVIDAD Y ACCESIBILIDAD",
-      title: "Boulevard Peatonal Transversal",
-      desc: "Eje amarillo peatonal que cose las supermanzanas occidentales y orientales con cruces seguros a nivel y accesibilidad continua.",
-      metrics: ["2,552 m² boulevard", "321 pasos cebra", "Pendiente natural 0–6 m"],
-      target: "-0.02m 0.025m -0.175m",
-      orbit: "90deg 52deg 0.36m",
+    grupal: {
+      kicker: "VISIÓN METROPOLITANA · 4 POLÍGONOS",
+      title: "Pieza Urbana Grupal Integrada (50,45 ha)",
+      desc: "Consolidación continua de 4 polígonos (NW, SW, SE y NE) articulados por la Av. Caracas (BRT), la Av. Ciudad de Lima (Calle 19) y un sistema de alamedas y bulevares peatonales que reemplazan 1.858 predios fragmentados.",
+      metrics: ["50,45 ha intervenidas", "1.858 predios Antes", "113 supermanzanas", "1.185 árboles"]
     },
-    "2": {
-      kicker: "02 · CIRCULACIONES Y MOVILIDAD",
-      title: "Corredor Multimodal y Ciclorruta",
-      desc: "Segregación clara entre carril exclusivo de transporte público, ciclorruta coral continua norte-sur y calzadas vehiculares ordenadas.",
-      metrics: ["1,852 m² ciclorruta", "1,817 m² transporte", "13,887 m² calzadas"],
-      target: "0m 0.022m 0m",
-      orbit: "15deg 50deg 0.42m",
+    ne: {
+      kicker: "POLÍGONO NE · DISTRITO VIVO",
+      title: "Distrito Vivo: 9 Manzanas, Parque Norte y M08 Cívico",
+      desc: "Bulevar arbolado de Calle 22, equipamiento cívico central (M08 en 5 pisos), Parque Norte con estanque (166,4 m²) y escalonamiento tipológico de zócalos 2P a torres de 12P, 14P y 18P sobre Av. Caracas.",
+      metrics: ["Zócalo 2P + 5P–18P", "Bulevar Calle 22", "M08 Cívico + Parque", "299 árboles propios"]
     },
-    "3": {
-      kicker: "03 · ESPACIO PÚBLICO Y ZÓCALO",
-      title: "Plazas Duras y Basamento Comercial",
-      desc: "El 58.8% del predio permanece abierto como espacio público y vacíos urbanos, activado en primeros y segundos pisos por zócalos comerciales en doble altura.",
-      metrics: ["68,819 m² espacio abierto", "17,965 m² plazas adoquín", "84,370 m² comercio"],
-      target: "0.02m 0.019m 0.275m",
-      orbit: "0deg 52deg 0.42m",
+    sw: {
+      kicker: "POLÍGONO SW · SUPERMANZANAS DE PATIO ABIERTO",
+      title: "8 Claustros Escalonados y Parque Triangular Occidental",
+      desc: "Composición de 8 manzanas cuadradas de patio abierto con vegetación interior, parque diagonal en el borde sur-occidental y torres de 18 pisos rematando hacia la Calle 19.",
+      metrics: ["8 patios abiertos", "Zócalo 2P + 5P/12P/18P", "Parque SW diagonal"]
     },
-    "4": {
-      kicker: "04 · ESTRUCTURA AMBIENTAL",
-      title: "Parque Norte, Arbolado y Estanque",
-      desc: "Corredor ecológico continuo que amortigua escorrentías mediante un estanque de agua en el sector noreste y densifica la cobertura vegetal nativa.",
-      metrics: ["17,388 m² zona verde", "299 árboles · 650 arbustos", "Estanque 166.4 m²"],
-      target: "0.104m 0.028m -0.380m",
-      orbit: "110deg 54deg 0.28m",
+    se: {
+      kicker: "POLÍGONO SE · FACHADA CARACAS Y PLAZA OCHAVE",
+      title: "Ochave Monumental en 14P y Fachada Urbana 18P",
+      desc: "Cuatro manzanas articuladas alrededor de una plaza ochave central de 14 pisos, flanqueadas al oriente por un frente de 18 pisos sobre la Av. Caracas y al occidente por terrazas escalonadas de 5P y 12P.",
+      metrics: ["Plaza Ochave 14P", "Frente Caracas 18P", "Borde Av. Lima"]
     },
-    "5": {
-      kicker: "05 · EQUIPAMIENTOS Y DENSIDAD",
-      title: "Pieza Cívica NE y Torres Mixtas",
-      desc: "Equipamiento cultural y comunitario de baja altura (3–5 pisos) articulado con superbloques residenciales de dobles fachadas bioclimáticas.",
-      metrics: ["22,568 m² equipamiento", "362,884 m² vivienda", "IO 0.412 · IC 4.01"],
-      target: "0.111m 0.048m -0.218m",
-      orbit: "125deg 54deg 0.34m",
+    nw: {
+      kicker: "POLÍGONO NW · TEJIDO ORGÁNICO ESCALONADO",
+      title: "Manzanas Curvas Perimetrales (10P a 18P)",
+      desc: "Morfología orgánica adaptada al trazado inclinado del noroccidente, manteniendo basamentos comerciales de doble altura (2P) y cuerpos escalonados en ladrillo, terracota, champán y grafito.",
+      metrics: ["Trazado orgánico", "Alturas 2P + 5P–18P", "Patios comunitarios"]
     },
+    ejes: {
+      kicker: "MOVILIDAD Y ESPACIO PÚBLICO",
+      title: "Sutura Vial, Ciclorrutas, BRT y Alamedas Verdes",
+      desc: "Continuidad transversal norte-sur y oriente-occidente con pasos peatonales seguros, franjas blandas arborizadas, carriles exclusivos de TransMilenio por la Caracas y zócalos activos en todos los cruces.",
+      metrics: ["Av. Caracas BRT", "Av. Ciudad de Lima", "Alameda Central", "Cobertura verde continua"]
+    }
   };
 
-  // Experiencia C: 3 corredores abiertos peatonales verificados sin intersección con edificios
   const TOUR_STOPS = [
     {
-      title: "1. Zócalo Comercial y Eje Sur",
-      desc: "Perspectiva abierta sobre el eje central frente a los basamentos comerciales de doble altura (superbloques de 17–20 pisos).",
-      target: "0m 0.034m 0.28m",
-      orbit: "0deg 74deg 0.16m",
-      fov: "42deg",
+      id: "grupal",
+      title: "Vista General — Pieza Grupal (50,45 ha)",
+      desc: "Panorámica conjunta de los cuatro polígonos articulados en lenguaje material unificado y alturas de 2P a 18P.",
+      orbit: "38deg 54deg 1.55m",
+      target: "0.02m 0.025m 0.00m"
     },
     {
-      title: "2. Boulevard Peatonal Central",
-      desc: "Visual longitudinal abierta a lo largo del boulevard amarillo desde el corredor oriental hacia el centro del proyecto.",
-      target: "-0.02m 0.034m -0.175m",
-      orbit: "90deg 72deg 0.24m",
-      fov: "42deg",
+      id: "sw",
+      title: "Polígono SW — Claustros Verdes y Parque Sur",
+      desc: "8 manzanas de patio central abierto conectadas al parque triangular SW y al eje de la Av. Ciudad de Lima.",
+      orbit: "32deg 52deg 0.82m",
+      target: "-0.121m 0.025m 0.243m"
     },
     {
-      title: "3. Parque Norte y Estanque",
-      desc: "Mirador en el extremo nororiental hacia el espejo de agua (166.4 m²), deck en madera, arbolado y pieza cívica de baja altura.",
-      target: "0.104m 0.036m -0.365m",
-      orbit: "115deg 72deg 0.18m",
-      fov: "40deg",
+      id: "se",
+      title: "Polígono SE — Plaza Ochave y Av. Caracas",
+      desc: "Cruces ochavados a 14 pisos en el corazón del sector y remate metropolitano de 18 pisos hacia TransMilenio.",
+      orbit: "48deg 54deg 0.74m",
+      target: "0.219m 0.025m 0.142m"
     },
+    {
+      id: "ne",
+      title: "Polígono NE — Distrito Vivo (Calle 22 y Parque Norte)",
+      desc: "Bulevar Calle 22, equipamiento cívico M08 (5P), Parque Norte con estanque y torres de hasta 18 pisos.",
+      orbit: "44deg 52deg 0.72m",
+      target: "0.234m 0.025m -0.207m"
+    },
+    {
+      id: "nw",
+      title: "Polígono NW — Curvas Orgánicas y Transición de Escala",
+      desc: "Trazado orgánico con basamento comercial continuo 2P y variación escalonada desde 5P hasta 18 pisos.",
+      orbit: "-38deg 52deg 0.76m",
+      target: "-0.040m 0.025m -0.201m"
+    },
+    {
+      id: "ejes",
+      title: "Eje Central — Suturas Verdes y Corredor BRT",
+      desc: "Lectura continua de los ejes urbanos que unen las cuatro piezas en una sola estructura ambiental y cívica.",
+      orbit: "64deg 56deg 1.05m",
+      target: "0.12m 0.020m -0.01m"
+    }
   ];
 
   let currentMode = "landing";
   let tourIndex = 0;
-  let antesLoaded = false;
-  let syncRafId = 0;
-  let lastCamSig = "";
+  let tourTimer = null;
+  let toastTimer = null;
+  let antesReady = false;
+  let syncPending = false;
+  let syncPauseUntil = 0;
 
-  function showToast(msg, durationMs = 6000) {
+  function showToast(msg, ms = 4200) {
     toastText.textContent = msg;
     toastBanner.hidden = false;
-    window.clearTimeout(showToast._timer);
-    if (durationMs > 0) {
-      showToast._timer = window.setTimeout(() => {
+    clearTimeout(toastTimer);
+    if (ms > 0) {
+      toastTimer = setTimeout(() => {
         toastBanner.hidden = true;
-      }, durationMs);
+      }, ms);
     }
   }
 
-  function ensureAntesLoaded() {
-    if (antesLoaded) return;
-    antesLoaded = true;
-    mvAntes.src = "assets/maqueta_1vty_antes.glb";
+  function setSplit(val) {
+    const pct = Math.max(0, Math.min(100, Number(val)));
+    document.documentElement.style.setProperty("--split", String(pct));
+    compareRange.value = String(pct);
+    presetBtns.forEach((b) => b.classList.toggle("active", Number(b.dataset.split) === pct));
   }
 
-  function setCamera(orbit, target, fov = DEFAULT_FOV) {
-    mvDespues.cameraTarget = target;
+  function applyCamera(orbit, target) {
+    syncPauseUntil = performance.now() + 900;
     mvDespues.cameraOrbit = orbit;
-    mvDespues.fieldOfView = fov;
-    if (currentMode === "compare") syncAntesCamera(true);
-  }
-
-  function syncAntesCamera(force = false) {
-    if (!antesLoaded || !mvDespues.getCameraOrbit) return;
-    const o = mvDespues.getCameraOrbit();
-    const t = mvDespues.getCameraTarget();
-    const fov = mvDespues.getFieldOfView();
-    const sig = `${o.theta.toFixed(4)}|${o.phi.toFixed(4)}|${o.radius.toFixed(4)}|${t.x.toFixed(4)}|${t.y.toFixed(4)}|${t.z.toFixed(4)}|${fov.toFixed(2)}`;
-    if (!force && sig === lastCamSig) return;
-    lastCamSig = sig;
-    mvAntes.cameraTarget = `${t.x}m ${t.y}m ${t.z}m`;
-    mvAntes.cameraOrbit = `${o.theta}rad ${o.phi}rad ${o.radius}m`;
-    mvAntes.fieldOfView = `${fov}deg`;
-    if (typeof mvAntes.jumpCameraToGoal === "function") {
-      mvAntes.jumpCameraToGoal();
+    mvDespues.cameraTarget = target;
+    if (antesReady) {
+      mvAntes.cameraOrbit = orbit;
+      mvAntes.cameraTarget = target;
     }
   }
 
-  function runCompareSyncLoop() {
-    window.cancelAnimationFrame(syncRafId);
-    if (currentMode !== "compare") return;
-    syncAntesCamera(false);
-    syncRafId = window.requestAnimationFrame(runCompareSyncLoop);
+  function resetCamera() {
+    applyCamera(DEFAULT_ORBIT, DEFAULT_TARGET);
   }
 
-  function applySplit(val) {
-    const clamped = Math.max(0, Math.min(100, Number(val)));
-    document.documentElement.style.setProperty("--split", String(clamped));
-    compareRange.value = String(clamped);
-    document.querySelectorAll(".compare-presets .chip-btn").forEach((b) => {
-      b.classList.toggle("active", Number(b.dataset.split) === clamped);
-    });
-  }
-
-  function closeInfoSheet() {
-    infoSheet.hidden = true;
-    document.querySelectorAll(".hotspot").forEach((el) => el.classList.remove("active"));
-  }
-
-  function openHotspot(id) {
-    const data = HOTSPOTS[id];
-    if (!data) return;
-    document.querySelectorAll(".hotspot").forEach((el) => {
-      el.classList.toggle("active", el.dataset.hs === id);
-    });
-    infoKicker.textContent = data.kicker;
-    infoTitle.textContent = data.title;
-    infoDesc.textContent = data.desc;
-    infoMetrics.innerHTML = data.metrics.map((m) => `<span class="metric-chip">${m}</span>`).join("");
-    infoSheet.hidden = false;
-    setCamera(data.orbit, data.target, "34deg");
-  }
-
-  function applyTourStop(idx) {
-    tourIndex = (idx + TOUR_STOPS.length) % TOUR_STOPS.length;
-    const stop = TOUR_STOPS[tourIndex];
-    tourStepEl.textContent = `PUNTO ${tourIndex + 1} / ${TOUR_STOPS.length}`;
-    tourTitleEl.textContent = stop.title;
-    tourDescEl.textContent = stop.desc;
-    setCamera(stop.orbit, stop.target, stop.fov);
-  }
-
-  function setMode(mode) {
-    if (mode === "ar") {
-      triggerAR();
-      return;
-    }
-
-    currentMode = mode;
-    document.body.dataset.mode = mode;
-    closeInfoSheet();
-
-    panelCompare.hidden = mode !== "compare";
-    panelTour.hidden = mode !== "tour";
-
-    document.querySelectorAll(".mode-dock .dock-btn").forEach((btn) => {
-      btn.classList.toggle("active", btn.dataset.go === mode);
-    });
-
-    if (mode === "compare") {
-      ensureAntesLoaded();
-      applySplit(compareRange.value);
-      syncAntesCamera(true);
-      runCompareSyncLoop();
-    } else {
-      window.cancelAnimationFrame(syncRafId);
-      if (mode === "tour") {
-        applyTourStop(tourIndex);
-      } else if (mode === "explore") {
-        setCamera(DEFAULT_ORBIT, DEFAULT_TARGET, DEFAULT_FOV);
+  function syncAntesCamera(forceJump = false) {
+    if (!antesReady) return;
+    if (!forceJump && performance.now() < syncPauseUntil) return;
+    try {
+      const orbit = mvDespues.getCameraOrbit();
+      const target = mvDespues.getCameraTarget();
+      const fov = mvDespues.getFieldOfView();
+      mvAntes.cameraOrbit = `${orbit.theta}rad ${orbit.phi}rad ${orbit.radius}m`;
+      mvAntes.cameraTarget = `${target.x}m ${target.y}m ${target.z}m`;
+      mvAntes.fieldOfView = `${fov}deg`;
+      if (forceJump && typeof mvAntes.jumpCameraToGoal === "function") {
+        mvAntes.jumpCameraToGoal();
       }
+    } catch (_) {
+      // ignore before element fully initialized
     }
   }
-
-  async function triggerAR() {
-    // Entrar al visor si estaba en portada para asegurar fallback 3D inmediato
-    if (currentMode === "landing") {
-      setMode("explore");
-    }
-
-    if (mvDespues.canActivateAR) {
-      try {
-        await mvDespues.activateAR();
-      } catch (err) {
-        showToast("No fue posible abrir la cámara AR. Puedes explorar la maqueta en el visor 3D web.");
-      }
-    } else {
-      showToast(
-        "AR no disponible en este navegador/equipo (requiere celular compatible con WebXR, Scene Viewer o AR Quick Look). Activo el visor 3D interactivo."
-      );
-    }
-  }
-
-  // Eventos de carga
-  mvDespues.addEventListener("progress", (e) => {
-    const pct = Math.round((e.detail.totalProgress || 0) * 100);
-    loadingBar.style.width = `${pct}%`;
-    if (pct >= 100) {
-      window.setTimeout(() => { loadingRibbon.style.opacity = "0"; }, 350);
-    }
-  });
-
-  mvDespues.addEventListener("load", () => {
-    loadingBar.style.width = "100%";
-    window.setTimeout(() => { loadingRibbon.style.opacity = "0"; }, 250);
-  });
-
-  mvDespues.addEventListener("error", () => {
-    showToast("Error cargando el modelo 3D. Verifica la conexión o recarga la página.", 0);
-  });
 
   mvDespues.addEventListener("camera-change", () => {
-    if (currentMode === "compare") {
+    if (currentMode !== "compare" || syncPending) return;
+    syncPending = true;
+    requestAnimationFrame(() => {
+      syncPending = false;
       syncAntesCamera(false);
-    }
+    });
   });
 
   mvAntes.addEventListener("load", () => {
-    if (currentMode === "compare") {
+    antesReady = true;
+    syncAntesCamera(true);
+  });
+
+  mvDespues.addEventListener("progress", (e) => {
+    const p = Math.round((e.detail?.totalProgress ?? 0) * 100);
+    loadingBar.style.width = `${p}%`;
+    if (p >= 100) {
+      setTimeout(() => {
+        loadingRibbon.style.opacity = "0";
+      }, 350);
+    }
+  });
+
+  function stopAutoTour() {
+    if (tourTimer) {
+      clearInterval(tourTimer);
+      tourTimer = null;
+    }
+    btnTourPlay.textContent = "Auto ▶";
+    btnTourPlay.classList.remove("active");
+  }
+
+  function goToTourStop(idx) {
+    tourIndex = (idx + TOUR_STOPS.length) % TOUR_STOPS.length;
+    const stop = TOUR_STOPS[tourIndex];
+    tourStepEl.textContent = `PARADA ${tourIndex + 1} / ${TOUR_STOPS.length}`;
+    tourTitleEl.textContent = stop.title;
+    tourDescEl.textContent = stop.desc;
+    applyCamera(stop.orbit, stop.target);
+    hotspotBtns.forEach((b) => b.classList.toggle("active", b.dataset.id === stop.id));
+  }
+
+  function openHotspot(id) {
+    const info = HOTSPOTS[id];
+    const btn = hotspotBtns.find((b) => b.dataset.id === id);
+    if (!info || !btn) return;
+    infoKicker.textContent = info.kicker;
+    infoTitle.textContent = info.title;
+    infoDesc.textContent = info.desc;
+    infoMetrics.innerHTML = info.metrics.map((m) => `<span class="metric-chip">${m}</span>`).join("");
+    infoSheet.hidden = false;
+    hotspotBtns.forEach((b) => b.classList.toggle("active", b === btn));
+    if (btn.dataset.orbit && btn.dataset.target) {
+      applyCamera(btn.dataset.orbit, btn.dataset.target);
+    }
+  }
+
+  function closeHotspot() {
+    infoSheet.hidden = true;
+    hotspotBtns.forEach((b) => b.classList.remove("active"));
+  }
+
+  function setMode(mode) {
+    currentMode = mode;
+    document.body.dataset.mode = mode;
+    stopAutoTour();
+    closeHotspot();
+
+    dockBtns.forEach((b) => b.classList.toggle("active", b.dataset.mode === mode));
+    panelCompare.hidden = mode !== "compare";
+    panelTour.hidden = mode !== "tour";
+
+    if (mode === "compare") {
       syncAntesCamera(true);
+    } else if (mode === "tour") {
+      goToTourStop(tourIndex);
     }
-  });
+  }
 
-  mvDespues.addEventListener("ar-status", (e) => {
-    if (e.detail.status === "failed") {
-      showToast("La sesión AR fue cancelada o falló. Continúas en el visor 3D web.");
-    }
-  });
-
-  // Navegación
-  document.querySelectorAll("[data-go]").forEach((btn) => {
-    btn.addEventListener("click", () => setMode(btn.dataset.go));
-  });
-
-  btnHome.addEventListener("click", () => setMode("landing"));
-  btnTopAr.addEventListener("click", triggerAR);
-  toastClose.addEventListener("click", () => { toastBanner.hidden = true; });
-  infoClose.addEventListener("click", closeInfoSheet);
-
-  btnToggleHotspots.addEventListener("click", () => {
+  function toggleHotspots() {
     const isOn = document.body.dataset.hotspots !== "off";
     document.body.dataset.hotspots = isOn ? "off" : "on";
     btnToggleHotspots.setAttribute("aria-pressed", String(!isOn));
-    if (isOn) closeInfoSheet();
-  });
+    if (isOn) closeHotspot();
+  }
 
-  document.querySelectorAll(".hotspot").forEach((hs) => {
-    hs.addEventListener("click", (e) => {
-      e.stopPropagation();
-      openHotspot(hs.dataset.hs);
+  async function launchAR() {
+    if (currentMode === "landing") setMode("explore");
+    if (mvDespues.canActivateAR) {
+      try {
+        await mvDespues.activateAR();
+      } catch (_) {
+        showToast("No se pudo iniciar la sesión AR en este dispositivo. Usa el modo Explorar o Comparar 3D.");
+      }
+    } else {
+      showToast("La Realidad Aumentada está disponible desde un teléfono compatible (Android ARCore o iPhone/iPad Safari). En PC explora e interactúa en 3D.");
+    }
+  }
+
+  hotspotBtns.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      if (currentMode !== "explore") setMode("explore");
+      openHotspot(btn.dataset.id);
     });
   });
 
-  compareRange.addEventListener("input", (e) => applySplit(e.target.value));
-  document.querySelectorAll(".compare-presets .chip-btn").forEach((btn) => {
-    btn.addEventListener("click", () => applySplit(btn.dataset.split));
+  dockBtns.forEach((btn) => btn.addEventListener("click", () => setMode(btn.dataset.mode)));
+  compareRange.addEventListener("input", (e) => setSplit(e.target.value));
+  presetBtns.forEach((btn) => btn.addEventListener("click", () => setSplit(btn.dataset.split)));
+
+  btnTourPrev.addEventListener("click", () => { stopAutoTour(); goToTourStop(tourIndex - 1); });
+  btnTourNext.addEventListener("click", () => { stopAutoTour(); goToTourStop(tourIndex + 1); });
+  btnTourPlay.addEventListener("click", () => {
+    if (tourTimer) {
+      stopAutoTour();
+    } else {
+      btnTourPlay.textContent = "Pausar ❚❚";
+      btnTourPlay.classList.add("active");
+      tourTimer = setInterval(() => goToTourStop(tourIndex + 1), 4200);
+    }
   });
 
-  btnTourPrev.addEventListener("click", () => applyTourStop(tourIndex - 1));
-  btnTourNext.addEventListener("click", () => applyTourStop(tourIndex + 1));
-  btnTourReset.addEventListener("click", () => setCamera(DEFAULT_ORBIT, DEFAULT_TARGET, DEFAULT_FOV));
+  btnToggleHotspots.addEventListener("click", toggleHotspots);
+  btnResetView.addEventListener("click", () => { stopAutoTour(); closeHotspot(); resetCamera(); });
+  btnCloseInfo.addEventListener("click", closeHotspot);
+  btnAr.addEventListener("click", launchAR);
+  btnBrandHome.addEventListener("click", () => setMode("landing"));
+  btnToastClose.addEventListener("click", () => { toastBanner.hidden = true; });
+
+  btnGoCompare.addEventListener("click", () => { setMode("compare"); setSplit(50); });
+  btnGoExplore.addEventListener("click", () => setMode("explore"));
+  btnGoTour.addEventListener("click", () => setMode("tour"));
+  btnGoAr.addEventListener("click", launchAR);
+
+  setSplit(50);
+  setMode("landing");
 })();

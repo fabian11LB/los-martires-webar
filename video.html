@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Video Recorrido 3D — Pieza Grupal 4 Polígonos (Los Mártires)</title>
+  <meta name="description" content="Recorrido arquitectónico continuo de más de 1 minuto por los 4 polígonos de renovación urbana en Los Mártires, Bogotá D.C." />
+  <meta name="theme-color" content="#0f1318" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="video-page">
+
+  <header class="video-header">
+    <a class="brand" href="index.html" title="Ir a maqueta 3D interactiva Antes y Después">
+      <span class="brand-tag">PIEZA GRUPAL · 4 POLÍGONOS · 50,45 HA</span>
+      <span class="brand-title">Video Recorrido Continuo (01:05)</span>
+    </a>
+
+    <div class="topbar-actions">
+      <a class="pill-btn pill-accent" href="index.html">
+        <span>3D Antes / Después ↔</span>
+      </a>
+    </div>
+  </header>
+
+  <main class="video-shell">
+    <div class="video-stage">
+      <video
+        id="tour-video"
+        class="video-player"
+        controls
+        autoplay
+        muted
+        loop
+        playsinline
+        preload="auto"
+        poster="assets/poster_grupal.jpg">
+        <source src="assets/recorrido_4_poligonos.mp4" type="video/mp4" />
+        Tu navegador no soporta reproducción de video HTML5.
+      </video>
+    </div>
+
+    <div class="video-meta-bar">
+      <div>
+        <h1>Sobrevuelo Continuo — Todos los Polígonos</h1>
+        <p id="video-status">Duración: 01:05 min · Recorrido continuo SW → Av. Ciudad de Lima → SE → Av. Caracas BRT → NE Distrito Vivo → NW.</p>
+      </div>
+      <div class="video-controls-row">
+        <button id="btn-vid-play" class="pill-btn dark-pill" type="button">Pausar / Reproducir</button>
+        <button id="btn-vid-restart" class="pill-btn dark-pill" type="button">Reiniciar ↺</button>
+        <a class="pill-btn pill-accent" href="assets/recorrido_4_poligonos.mp4" download>Descargar MP4 ↓</a>
+      </div>
+    </div>
+
+    <section aria-label="Capítulos del recorrido">
+      <div class="video-chapters">
+        <button class="chapter-btn active" data-t="0" type="button">
+          <span class="chapter-time">00:00</span>
+          <span class="chapter-name">Panorámica General (4 Polígonos)</span>
+        </button>
+        <button class="chapter-btn" data-t="12" type="button">
+          <span class="chapter-time">00:12</span>
+          <span class="chapter-name">Polígono SW · Patios y Parque</span>
+        </button>
+        <button class="chapter-btn" data-t="24" type="button">
+          <span class="chapter-time">00:24</span>
+          <span class="chapter-name">Av. Ciudad de Lima y Polígono SE</span>
+        </button>
+        <button class="chapter-btn" data-t="36" type="button">
+          <span class="chapter-time">00:36</span>
+          <span class="chapter-name">Av. Caracas BRT y Bulevar Calle 22</span>
+        </button>
+        <button class="chapter-btn" data-t="49" type="button">
+          <span class="chapter-time">00:49</span>
+          <span class="chapter-name">Parque Norte, Estanque y M08 Cívico</span>
+        </button>
+        <button class="chapter-btn" data-t="55" type="button">
+          <span class="chapter-time">00:55</span>
+          <span class="chapter-name">Polígono NW Orgánico y Cierre</span>
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      const video = document.getElementById("tour-video");
+      const chapters = Array.from(document.querySelectorAll(".chapter-btn"));
+      const btnPlay = document.getElementById("btn-vid-play");
+      const btnRestart = document.getElementById("btn-vid-restart");
+      let pendingSeek = null;
+
+      function highlightForTime(now) {
+        let activeIdx = 0;
+        chapters.forEach((b, i) => {
+          if (now + 0.2 >= Number(b.dataset.t || 0)) activeIdx = i;
+        });
+        chapters.forEach((b, i) => b.classList.toggle("active", i === activeIdx));
+      }
+
+      chapters.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const t = Number(btn.dataset.t || 0);
+          highlightForTime(t);
+          if (video.readyState >= 1) {
+            video.currentTime = t;
+            video.play().catch(() => {});
+          } else {
+            pendingSeek = t;
+          }
+        });
+      });
+
+      video.addEventListener("loadedmetadata", () => {
+        if (pendingSeek !== null) {
+          video.currentTime = pendingSeek;
+          pendingSeek = null;
+          video.play().catch(() => {});
+        }
+      });
+
+      video.addEventListener("timeupdate", () => {
+        highlightForTime(video.currentTime || 0);
+      });
+
+      btnPlay.addEventListener("click", () => {
+        if (video.paused) video.play().catch(() => {});
+        else video.pause();
+      });
+
+      btnRestart.addEventListener("click", () => {
+        video.currentTime = 0;
+        video.play().catch(() => {});
+      });
+    })();
+  </script>
+</body>
+</html>
